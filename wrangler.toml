@@ -5,3 +5,6 @@ compatibility_date = "2026-04-21"
 [ai]
 binding = "AI"
 remote = true
+
+[assets]
+directory = "./public"

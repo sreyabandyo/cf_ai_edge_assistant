@@ -1,17 +1,16 @@
 export default {
   async fetch(request, env) {
-    try {
-      if (request.method === "POST") {
+    console.log("ENV:", env); // debug
+
+    const url = new URL(request.url);
+
+    // Handle AI chat
+    if (url.pathname === "/chat" && request.method === "POST") {
+      try {
         const { message } = await request.json();
 
-        if (!env.AI) {
-          return new Response(JSON.stringify({ error: "AI binding missing" }), {
-            headers: { "Content-Type": "application/json" }
-          });
-        }
-
-        const aiResponse = await env.AI.run(
-          "@cf/meta/llama-3-8b-instruct",
+        const response = await env.AI.run(
+          "@cf/meta/llama-3.1-8b-instruct",
           {
             messages: [
               { role: "system", content: "You are a helpful assistant." },
@@ -20,21 +19,37 @@ export default {
           }
         );
 
+        // Handle different response shapes
         const reply =
-          aiResponse?.response ||
-          aiResponse?.result?.response ||
-          JSON.stringify(aiResponse);
+          response.response ||
+          response.result?.response ||
+          "No response from AI";
 
-        return new Response(JSON.stringify({ reply }), {
-          headers: { "Content-Type": "application/json" }
-        });
+        return new Response(
+          JSON.stringify({ reply }),
+          {
+            headers: { "Content-Type": "application/json" }
+          }
+        );
+
+      } catch (err) {
+        console.log("ERROR:", err);
+
+        return new Response(
+          JSON.stringify({ error: err.message }),
+          {
+            headers: { "Content-Type": "application/json" }
+          }
+        );
       }
-
-      return new Response("NEW VERSION WORKING");
-    } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), {
-        headers: { "Content-Type": "application/json" }
-      });
     }
-  },
+
+    // Serve your frontend (from /public)
+    return new Response(
+      await (await fetch("http://localhost:8787/index.html")).text(),
+      {
+        headers: { "Content-Type": "text/html" }
+      }
+    );
+  }
 };

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Edge Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      width: 400px;
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: #3b82f6;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    .output {
+      margin-top: 15px;
+      background: #020617;
+      padding: 10px;
+      border-radius: 8px;
+      min-height: 60px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>AI Assistant</h1>
+
+    <input id="input" placeholder="Ask something..." />
+    <button onclick="send()">Ask</button>
+
+    <div id="output" class="output"></div>
+  </div>
+
+  <script>
+    async function send() {
+      const input = document.getElementById("input");
+      const output = document.getElementById("output");
+
+      const message = input.value;
+      if (!message) return;
+
+      output.textContent = "Thinking...";
+
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ message })
+        });
+
+        // 👇 Read raw response FIRST
+        const text = await res.text();
+        console.log("RAW RESPONSE:", text);
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          output.textContent = "Invalid response from server";
+          return;
+        }
+
+        output.textContent = data.reply || data.error || "No response";
+
+      } catch (err) {
+        console.log("FRONTEND ERROR:", err);
+        output.textContent = "Error connecting to server";
+      }
+
+      input.value = "";
+    }
+
+    // ✅ Enter key support
+    document.getElementById("input").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") send();
+    });
+  </script>
+</body>
+</html>
